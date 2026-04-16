@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔐 Мой Telegram-прокси</title>
+  <style>
+    :root { --primary: #0088cc; --bg: #f8f9fa; --card: #fff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: #333; line-height: 1.6;
+      padding: 20px; max-width: 700px; margin: 0 auto;
+    }
+    .card {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    h1 { text-align: center; margin: 10px 0 25px; color: var(--primary); }
+    .form-group { margin: 18px 0; }
+    label { display: block; margin-bottom: 6px; font-weight: 500; }
+    input[type="text"], input[type="checkbox"] {
+      width: 100%; padding: 12px; border: 1px solid #ddd;
+      border-radius: 10px; font-size: 15px;
+    }
+    input[type="checkbox"] { width: auto; margin-right: 8px; }
+    .hint { font-size: 13px; color: #666; margin-top: 4px; }
+    .toggle { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
+    button {
+      width: 100%; background: var(--primary); color: white;
+      border: none; padding: 14px; border-radius: 12px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #0077b5; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    
+    #result { display: none; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    
+    .proxy-link {
+      background: #f1f5f9; padding: 12px; border-radius: 8px;
+      font-family: monospace; word-break: break-all; margin: 10px 0;
+      font-size: 13px;
+    }
+    .copy-btn {
+      background: #6c757d; padding: 6px 12px; font-size: 13px;
+      width: auto; border-radius: 6px; margin-left: 10px;
+    }
+    .qr-placeholder {
+      text-align: center; padding: 20px; background: #f8f9fa;
+      border-radius: 10px; margin: 15px 0; font-size: 14px; color: #666;
+    }
+    .steps { counter-reset: step; margin: 15px 0; }
+    .steps div {
+      counter-increment: step; position: relative; padding-left: 30px; margin: 10px 0;
+    }
+    .steps div::before {
+      content: counter(step); position: absolute; left: 0; top: 0;
+      width: 22px; height: 22px; background: var(--primary); color: white;
+      border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px;
+    }
+    .footer { text-align: center; font-size: 13px; color: #888; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Ваш личный Telegram-прокси</h1>
+  
+  <div class="card">
+    <div class="form-group">
+      <label>Ваш идентификатор (необязательно)</label>
+      <input type="text" id="user_id" placeholder="Например: ivan_2024 или @username">
+      <div class="hint">Нужен только для вашего удобства. Если пусто — сгенерируется автоматически.</div>
+    </div>
+    
+    <div class="form-group">
+      <label>Спонсорский tag канала (необязательно)</label>
+      <input type="text" id="tag" placeholder="dcbe8f1493fa4cd9ab300891c0b5b326">
+      <div class="hint">Получите в @MTProxybot. Поддержите свой канал! 💙</div>
+    </div>
+    
+    <div class="toggle">
+      <input type="checkbox" id="fake_tls">
+      <label for="fake_tls">Использовать Fake-TLS (скрыть прокси от провайдера)</label>
+    </div>
+    
+    <div class="form-group" id="tls_group" style="display:none;">
+      <label>Домен для маскировки</label>
+      <input type="text" id="tls_domain" placeholder="telegram.org или ваш домен">
+      <div class="hint">Прокси будет выглядеть как обычный HTTPS-трафик</div>
+    </div>
+    
+    <button id="generateBtn" onclick="generateProxy()">✨ Получить мой прокси</button>
+  </div>
+
+  <div id="result" class="card">
+    <h3 style="color:#2ecc71; margin-bottom:15px;">✅ Готово! Ваш прокси:</h3>
+    
+    <div class="steps">
+      <div>Скопируйте ссылку ниже</div>
+      <div>Откройте её в приложении Telegram</div>
+      <div>Нажмите «Подключиться» — и всё!</div>
+    </div>
+    
+    <div class="proxy-link" id="proxyLink"></div>
+    <button class="copy-btn" onclick="copy('proxyLink')">📋 Копировать</button>
+    
+    <div class="qr-placeholder">
+      📱 <strong>QR-код</strong><br>
+      <small>Откройте камеру в Telegram и наведите на экран другого устройства</small><br>
+      <div id="qrContainer" style="margin-top:15px; font-size:40px;">⬛⬛⬛<br>⬛⬜⬛<br>⬛⬛⬛</div>
+    </div>
+    
+    <details style="margin-top:20px;">
+      <summary style="cursor:pointer; color:var(--primary);">⚙️ Ручная настройка</summary>
+      <div style="margin-top:10px; font-size:14px;">
+        <strong>Сервер:</strong> <span id="srv"></span><br>
+        <strong>Порт:</strong> <span id="prt"></span><br>
+        <strong>Secret:</strong> <span id="sec" style="word-break:break-all;"></span>
+        <button class="copy-btn" onclick="copy('sec')">📋</button>
+      </div>
+    </details>
+  </div>
+
+  <div class="footer">
+    Прокси работает на базе MTProto • Порт {{ port }} • 
+    <a href="https://t.me/MTProxy" target="_blank" style="color:var(--primary);">Подробнее</a>
+  </div>
+
+  <script>
+    // Показать/скрыть поле домена
+    document.getElementById('fake_tls').addEventListener('change', function() {
+      document.getElementById('tls_group').style.display = this.checked ? 'block' : 'none';
+    });
+
+    async function generateProxy() {
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Создаём...';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            user_id: document.getElementById('user_id').value,
+            tag: document.getElementById('tag').value,
+            fake_tls: document.getElementById('fake_tls').checked,
+            tls_domain: document.getElementById('tls_domain').value
+          })
+        });
+        
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Ошибка сервера');
+        
+        // Показываем результат
+        document.getElementById('proxyLink').textContent = data.proxy_link;
+        document.getElementById('srv').textContent = '{{ server }}';
+        document.getElementById('prt').textContent = '{{ port }}';
+        document.getElementById('sec').textContent = data.secret;
+        document.getElementById('result').style.display = 'block';
+        
+        // Простой "QR" (в реальности можно подключить qrcode.js)
+        document.getElementById('qrContainer').innerHTML = 
+          `<a href="${data.proxy_link}" target="_blank" style="text-decoration:none">
+            🔗 Открыть в Telegram
+          </a>`;
+          
+        // Плавный скролл к результату
+        document.getElementById('result').scrollIntoView({behavior: 'smooth'});
+        
+      } catch (e) {
+        alert('❌ ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Получить мой прокси';
+      }
+    }
+
+    function copy(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        const orig = btn.textContent;
+        btn.textContent = '✓ Скопировано!';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+  </script>
+</body>
+</html>
