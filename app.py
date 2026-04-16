@@ -5,34 +5,33 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# ⚙️ НАСТРОЙКИ (отредактируйте под свой сервер)
+# ⚙️ НАСТРОЙКИ
 CONFIG = {
-    "server_ip": os.getenv("SERVER_IP", "138.124.231.149"),  # или домен
+    "server_ip": os.getenv("SERVER_IP", "your.server.ip"),
     "proxy_port": int(os.getenv("PROXY_PORT", 443)),
-    "mtproto_path": "/opt/mtproto_proxy",  # где установлен seriyps/mtproto_proxy
+    "mtproto_path": "/opt/mtproto_proxy",
     "config_file": "/opt/mtproto_proxy/config/prod-sys.config"
 }
 
+# 📢 ЖЁСТКО ЗАШИТЫЙ СПОНСОРСКИЙ TAG
+SPONSOR_TAG = "baa70264aaf0a772b7946b62036b06ee"
+
 def generate_secret():
-    """32-символьный hex-секрет (16 байт) для MTProto"""
     return secrets.token_hex(16)
 
-def add_secret_to_config(secret, tag="", user_hint=""):
-    """Добавляет новый секрет в конфиг прокси (тот же порт, новый name)"""
+def add_secret_to_config(secret, tag, user_hint=""):
+    """Добавляет новый секрет в конфиг прокси"""
     name = f"mtp_{user_hint or secrets.token_hex(4)}"
     
-    # Новая запись в Erlang-синтаксисе
     new_entry = f'''    #{name => {name},
        listen_ip => "0.0.0.0",
        port => {CONFIG['proxy_port']},
        secret => <<"{secret}">>,
        tag => <<"{tag}">>}}'''
     
-    # Читаем конфиг
     with open(CONFIG["config_file"], 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # Простая вставка нового секрета в список ports
     import re
     match = re.search(r'(\{ports,\s*\[)([\s\S]*?)(\]\s*\})', content)
     if match:
@@ -45,13 +44,9 @@ def add_secret_to_config(secret, tag="", user_hint=""):
         with open(CONFIG["config_file"], 'w', encoding='utf-8') as f:
             f.write(content)
         
-        # Применяем конфиг без перезапуска (seriyps поддерживает hot-reload)
         try:
-            subprocess.run([
-                'sudo', 'make', '-C', CONFIG['mtproto_path'], 'update-sysconfig'
-            ], check=True, capture_output=True)
-            subprocess.run(['sudo', 'systemctl', 'reload', 'mtproto-proxy'], 
-                         check=True, capture_output=True)
+            subprocess.run(['sudo', 'make', '-C', CONFIG['mtproto_path'], 'update-sysconfig'], check=True, capture_output=True)
+            subprocess.run(['sudo', 'systemctl', 'reload', 'mtproto-proxy'], check=True, capture_output=True)
             return True
         except Exception as e:
             print(f"⚠️ Reload error: {e}")
@@ -59,9 +54,7 @@ def add_secret_to_config(secret, tag="", user_hint=""):
     return False
 
 def make_proxy_link(secret, fake_tls=False, tls_domain=""):
-    """Формирует ссылку для Telegram"""
     if fake_tls and tls_domain:
-        # ee-формат: ee + secret + hex(domain)
         full_secret = f"ee{secret}{tls_domain.encode().hex()}"
     else:
         full_secret = secret
@@ -77,20 +70,16 @@ def index():
 def generate():
     data = request.json or {}
     
-    # Получаем данные от пользователя
     user_id = (data.get('user_id') or f"user_{secrets.token_hex(4)}").strip().replace(' ', '_')
-    tag = data.get('tag', '').strip()  # спонсорский tag из @MTProxybot
     fake_tls = data.get('fake_tls', False)
     tls_domain = data.get('tls_domain', '').strip() if fake_tls else ""
     
-    # Генерируем уникальный секрет
     secret = generate_secret()
     
-    # Добавляем в конфиг прокси
-    if not add_secret_to_config(secret, tag, user_id):
+    # 🔒 TAG ВСЕГДА БЕРЁТСЯ ИЗ КОНСТАНТЫ
+    if not add_secret_to_config(secret, SPONSOR_TAG, user_id):
         return jsonify({'error': 'Не удалось активировать прокси. Попробуйте позже.'}), 500
     
-    # Формируем ответ
     link = make_proxy_link(secret, fake_tls, tls_domain)
     
     return jsonify({
@@ -98,14 +87,13 @@ def generate():
         'user_id': user_id,
         'secret': secret,
         'proxy_link': link,
-        'qr_payload': f"tg://proxy?server={CONFIG['server_ip']}&port={CONFIG['proxy_port']}&secret={link.split('secret=')[1]}",
-        'instructions': f"""
-1. Откройте ссылку выше в Telegram
+        'sponsor_tag': SPONSOR_TAG,
+        'instructions': """
+1. Откройте ссылку ниже в Telegram
 2. Нажмите «Подключиться»
-3. Готово! Ваш трафик теперь идёт через персональный прокси 🎉
+3. Готово! Ваш трафик идёт через персональный прокси 🎉
         """.strip()
     })
 
 if __name__ == '__main__':
-    # Запуск только на localhost — за nginx!
     app.run(host='127.0.0.1', port=5000)
