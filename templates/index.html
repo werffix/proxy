@@ -26,11 +26,15 @@
     input[type="checkbox"] { width: auto; margin-right: 8px; }
     .hint { font-size: 13px; color: #666; margin-top: 4px; }
     .toggle { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
+    .sponsor-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #e6f7ff; color: #006699; padding: 6px 10px;
+      border-radius: 8px; font-size: 13px; margin-bottom: 15px;
+    }
     button {
       width: 100%; background: var(--primary); color: white;
       border: none; padding: 14px; border-radius: 12px;
-      font-size: 16px; font-weight: 600; cursor: pointer;
-      transition: background 0.2s;
+      font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;
     }
     button:hover { background: #0077b5; }
     button:disabled { background: #aaa; cursor: not-allowed; }
@@ -40,16 +44,11 @@
     
     .proxy-link {
       background: #f1f5f9; padding: 12px; border-radius: 8px;
-      font-family: monospace; word-break: break-all; margin: 10px 0;
-      font-size: 13px;
+      font-family: monospace; word-break: break-all; margin: 10px 0; font-size: 13px;
     }
     .copy-btn {
       background: #6c757d; padding: 6px 12px; font-size: 13px;
       width: auto; border-radius: 6px; margin-left: 10px;
-    }
-    .qr-placeholder {
-      text-align: center; padding: 20px; background: #f8f9fa;
-      border-radius: 10px; margin: 15px 0; font-size: 14px; color: #666;
     }
     .steps { counter-reset: step; margin: 15px 0; }
     .steps div {
@@ -67,16 +66,12 @@
   <h1>🔐 Ваш личный Telegram-прокси</h1>
   
   <div class="card">
+    <div class="sponsor-badge">📢 Спонсорский канал подключён автоматически</div>
+
     <div class="form-group">
       <label>Ваш идентификатор (необязательно)</label>
       <input type="text" id="user_id" placeholder="Например: ivan_2024 или @username">
       <div class="hint">Нужен только для вашего удобства. Если пусто — сгенерируется автоматически.</div>
-    </div>
-    
-    <div class="form-group">
-      <label>Спонсорский tag канала (необязательно)</label>
-      <input type="text" id="tag" placeholder="dcbe8f1493fa4cd9ab300891c0b5b326">
-      <div class="hint">Получите в @MTProxybot. Поддержите свой канал! 💙</div>
     </div>
     
     <div class="toggle">
@@ -105,10 +100,8 @@
     <div class="proxy-link" id="proxyLink"></div>
     <button class="copy-btn" onclick="copy('proxyLink')">📋 Копировать</button>
     
-    <div class="qr-placeholder">
-      📱 <strong>QR-код</strong><br>
-      <small>Откройте камеру в Telegram и наведите на экран другого устройства</small><br>
-      <div id="qrContainer" style="margin-top:15px; font-size:40px;">⬛⬛⬛<br>⬛⬜⬛<br>⬛⬛⬛</div>
+    <div style="margin-top:15px; padding:10px; background:#f0fdf4; border-radius:8px; font-size:13px;">
+      🟢 Спонсор: <code id="sponsorInfo"></code>
     </div>
     
     <details style="margin-top:20px;">
@@ -128,7 +121,6 @@
   </div>
 
   <script>
-    // Показать/скрыть поле домена
     document.getElementById('fake_tls').addEventListener('change', function() {
       document.getElementById('tls_group').style.display = this.checked ? 'block' : 'none';
     });
@@ -144,29 +136,22 @@
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
             user_id: document.getElementById('user_id').value,
-            tag: document.getElementById('tag').value,
             fake_tls: document.getElementById('fake_tls').checked,
             tls_domain: document.getElementById('tls_domain').value
+            // 🔒 tag больше не отправляется, он берётся сервером из константы
           })
         });
         
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'Ошибка сервера');
         
-        // Показываем результат
         document.getElementById('proxyLink').textContent = data.proxy_link;
+        document.getElementById('sponsorInfo').textContent = data.sponsor_tag;
         document.getElementById('srv').textContent = '{{ server }}';
         document.getElementById('prt').textContent = '{{ port }}';
         document.getElementById('sec').textContent = data.secret;
         document.getElementById('result').style.display = 'block';
         
-        // Простой "QR" (в реальности можно подключить qrcode.js)
-        document.getElementById('qrContainer').innerHTML = 
-          `<a href="${data.proxy_link}" target="_blank" style="text-decoration:none">
-            🔗 Открыть в Telegram
-          </a>`;
-          
-        // Плавный скролл к результату
         document.getElementById('result').scrollIntoView({behavior: 'smooth'});
         
       } catch (e) {
