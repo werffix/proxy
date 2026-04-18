@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Активация прокси</title>
+  
+  <!-- Подключение шрифта Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #000000;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+    }
+
+    /* Шапка сайта */
+    .header {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      color: #ffffff;
+      letter-spacing: 1px;
+      text-transform: lowercase;
+    }
+
+    .header span {
+      color: #ffffff;
+      opacity: 0.9;
+    }
+
+    .container {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .proxy-btn {
+      background-color: #ffffff;
+      color: #000000;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      padding: 16px 40px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+    }
+
+    .proxy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+    }
+
+    .proxy-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Адаптив для мобильных */
+    @media (max-width: 480px) {
+      .header {
+        font-size: 20px;
+        top: 16px;
+      }
+      
+      .proxy-btn {
+        font-size: 16px;
+        padding: 14px 32px;
+        width: 100%;
+        max-width: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Шапка -->
+  <header class="header">q1 proxy</header>
+  
+  <!-- Основной контент -->
+  <div class="container">
+    <a 
+      href="tg://proxy?server=proxy.ccdt.tw&port=443&secret=eee8a1bfb8f600e6d4d5ee93bcbaf7c53b766b2e7275" 
+      class="proxy-btn"
+    >
+      Активировать прокси
+    </a>
+  </div>
+</body>
+</html>
+
