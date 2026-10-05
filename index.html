@@ -4,18 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>q1 proxy</title>
-  
+
   <!-- шрифт -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-  
+
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background-color: #000000;
@@ -28,7 +24,6 @@
       padding: 20px;
     }
 
-    /* Шапка */
     .header {
       position: absolute;
       top: 24px;
@@ -40,16 +35,43 @@
       letter-spacing: 1px;
     }
 
-    /* Контейнер для центрирования */
     .container {
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px; /* Отступ между кнопкой и текстом */
+      gap: 20px;
     }
 
-    /* Кнопка */
+    /* Статус */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .status .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #888;
+    }
+
+    .status.ok .dot   { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+    .status.fail .dot { background: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
+
+    .updated {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      margin-top: -8px;
+    }
+
     .proxy-btn {
       background-color: #ffffff;
       color: #000000;
@@ -71,52 +93,79 @@
       box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
     }
 
-    .proxy-btn:active {
-      transform: translateY(0);
-    }
+    .proxy-btn:active { transform: translateY(0); }
 
-    /* Текст предупреждения */
     .warning-text {
-      color: rgba(255, 255, 255, 0.5); /* Полупрозрачный белый */
+      color: rgba(255, 255, 255, 0.5);
       font-size: 13px;
       font-weight: 400;
       max-width: 280px;
       line-height: 1.4;
     }
 
-    /* Адаптив */
     @media (max-width: 480px) {
-      .header {
-        font-size: 20px;
-        top: 20px;
-      }
-      
+      .header { font-size: 20px; top: 20px; }
       .proxy-btn {
         font-size: 16px;
         padding: 14px 32px;
         width: 100%;
         max-width: 300px;
       }
-
-      .warning-text {
-        font-size: 12px;
-      }
+      .warning-text { font-size: 12px; }
     }
   </style>
 </head>
 <body>
-  
+
   <header class="header">q1 proxy</header>
-  
+
   <div class="container">
-    <a href="tg://proxy?server=proxy.qone.su&port=443&secret=ee8a56ca83871f3e8ebb0b97b64801717363646e762d696d672e706572656b726573746f6b2e7275" class="proxy-btn">
-      Активировать прокси
-    </a>
-    
+    <div class="status" id="status">
+      <span class="dot"></span>
+      <span id="status-text">…</span>
+    </div>
+    <p class="updated" id="updated"></p>
+
+    <a href="#" id="proxy-link" class="proxy-btn">Активировать прокси</a>
+
     <p class="warning-text">
       При включенном VPN - прокси может работать нестабильно!
     </p>
   </div>
+
+  <script>
+    /* ==========================================================
+       НАСТРОЙКИ — меняй только этот блок
+       ========================================================== */
+    const CONFIG = {
+      // Статус прокси: true = "Работает", false = "Не работает"
+      // (быстро переключается заменой true/false, либо поставь // в начале нужной строки)
+      // working: true,
+      working: false,
+
+      // Дата последнего изменения прокси (любой текст)
+      lastChange: "16.09.2026",
+
+      // Ссылка на прокси
+      proxyLink: "tg://proxy?server=proxy.qone.su&port=443&secret=ee8a56ca83871f3e8ebb0b97b64801717363646e762d696d672e706572656b726573746f6b2e7275"
+    };
+    /* ==========================================================
+       Дальше не трогать
+       ========================================================== */
+
+    // Переключение статуса через решётку в адресе: страница#works / страница#down
+    // (удобно для проверки; если решётки нет — берётся значение из CONFIG)
+    let working = CONFIG.working;
+    const hash = location.hash.toLowerCase();
+    if (hash === "#works") working = true;
+    if (hash === "#down")  working = false;
+
+    const statusEl = document.getElementById("status");
+    statusEl.classList.add(working ? "ok" : "fail");
+    document.getElementById("status-text").textContent = working ? "Работает" : "Не работает";
+    document.getElementById("updated").textContent = "Последнее изменение: " + CONFIG.lastChange;
+    document.getElementById("proxy-link").href = CONFIG.proxyLink;
+  </script>
 
 </body>
 </html>
